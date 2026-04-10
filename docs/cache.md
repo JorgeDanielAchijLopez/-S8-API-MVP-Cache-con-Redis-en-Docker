@@ -1,16 +1,18 @@
 # Cache – InvControl Pro
 
-## Endpoint con cache
+## Endpoint(s) que usan cache
 
 El endpoint que utiliza cache es:
 
 GET /products/{product_id}
 
+Este endpoint fue seleccionado porque es una operación de lectura frecuente.
+
 ---
 
-## Clave en Redis
+## Claves de Redis
 
-Para cada producto se genera una clave con el formato:
+Las claves generadas en Redis siguen el siguiente formato:
 
 product:{product_id}
 
@@ -20,60 +22,74 @@ product:1
 
 ---
 
-## TTL (Time To Live)
+## TTL definido
 
-Cada dato almacenado en Redis tiene un tiempo de vida de:
+Se definió un TTL (Time To Live) de:
 
 60 segundos
 
-Después de este tiempo, la información se elimina automáticamente.
+Esto permite que los datos se mantengan actualizados y evita inconsistencias prolongadas.
 
 ---
 
 ## Estrategia de cache
 
-Se utiliza la estrategia **cache-aside**.
+Se utiliza la estrategia:
 
-Esto significa que la API es responsable de:
+Cache-Aside
 
-- consultar el cache
-- almacenar datos en Redis
-- invalidar cache cuando cambia la información
+Flujo:
+
+1. La API recibe la solicitud
+2. Busca en Redis
+3. Si existe → responde desde cache
+4. Si no existe → obtiene datos desde memoria
+5. Guarda en Redis con TTL
+6. Responde al cliente
 
 ---
 
-## Funcionamiento
+## Comportamiento del sistema
 
-### Cache miss
+### Cache Hit
 
-1. El cliente solicita un producto
-2. La API busca en Redis
-3. No encuentra el dato
-4. Consulta la fuente principal (memoria)
-5. Guarda el resultado en Redis con TTL
-6. Devuelve la respuesta
+Cuando el dato ya está en Redis:
 
-### Cache hit
+- Se responde directamente desde cache
+- No se consulta la fuente principal
+- Mejora el tiempo de respuesta
 
-1. El cliente solicita un producto
-2. La API encuentra el dato en Redis
-3. Devuelve la respuesta directamente desde cache
+---
+
+### Cache Miss
+
+Cuando el dato no está en Redis:
+
+- Se consulta la fuente principal (memoria)
+- Se guarda en Redis
+- Se devuelve la respuesta
 
 ---
 
 ## Invalidación de cache
 
-Cuando ocurre una modificación en los datos:
+Cuando se actualiza el stock o se registra una venta:
 
-- registro de venta
-- actualización de stock
-
-La clave correspondiente en Redis se elimina para evitar datos desactualizados.
+- Se elimina la clave correspondiente en Redis
+- Esto evita devolver datos desactualizados
 
 ---
 
 ## Riesgos y limitaciones
 
-- Los datos pueden estar desactualizados durante el tiempo de TTL
-- Redis no es persistente en este MVP
-- Si el contenedor se reinicia, se pierde el cache
+### 1. Datos desactualizados
+Puede haber inconsistencias durante el TTL
+
+### 2. Dependencia de Redis
+Si Redis falla, el sistema pierde el beneficio del cache
+
+### 3. Almacenamiento en memoria
+Los datos principales no son persistentes
+
+### 4. TTL fijo
+No se adapta dinámicamente a cambios del sistema
