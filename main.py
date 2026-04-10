@@ -5,31 +5,31 @@ import json
 
 app = FastAPI(title="InvControl Pro API")
 
-# 🔴 Conexión a Redis (usa "redis" porque así se llama el contenedor)
+# Conexión a Redis (usa "redis" porque así se llama el contenedor)
 r = redis.Redis(host="redis", port=6379, decode_responses=True)
 
-# 🧠 Base de datos en memoria
+#  Base de datos en memoria
 products = {}
 
-# 📦 Modelo Producto
+#  Modelo Producto
 class Product(BaseModel):
     id: int
     name: str
     price: float
     stock: int
 
-# 🧾 Modelo Venta
+#  Modelo Venta
 class Sale(BaseModel):
     product_id: int
     quantity: int
 
-# 🔹 Crear producto
+#  Crear producto
 @app.post("/products")
 def create_product(product: Product):
     products[product.id] = product
     return {"message": "Producto creado"}
 
-# 🔹 Obtener producto (CON CACHE )
+#  Obtener producto (CON CACHE )
 @app.get("/products/{product_id}")
 def get_product(product_id: int):
 
@@ -58,7 +58,7 @@ def get_product(product_id: int):
         "data": product
     }
 
-# 🔹 Registrar venta
+#  Registrar venta
 @app.post("/sales")
 def create_sale(sale: Sale):
 
@@ -78,7 +78,7 @@ def create_sale(sale: Sale):
 
     return {"message": "Venta registrada"}
 
-# 🔹 Actualizar stock
+#  Actualizar stock
 @app.put("/products/{product_id}/stock")
 def update_stock(product_id: int, stock: int):
 
